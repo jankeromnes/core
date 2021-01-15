@@ -83,7 +83,7 @@ define(function(require, exports, module) {
             }, handle);
             
             // Insert some CSS
-            ui.insertCss(require("text!./style.css"), options.staticPrefix, handle);
+            ui.insertCss(require("text!./style.css"), null, handle);
         });
 
         // Search through pages
@@ -349,9 +349,8 @@ define(function(require, exports, module) {
                 // delete session.repl;
             });
             plugin.on("getState", function(e) {
-                // @todo at one for each value container
                 var session = e.doc.getSession();
-                if (!session.repl) return;
+                if (!session.repl || e.filter) return;
                 
                 e.state.type = session.type;
                 var data = session.repl.history._data;

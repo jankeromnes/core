@@ -23,7 +23,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.ui/focus",
         "plugins/c9.ide.ui/lib_apf",
         "plugins/c9.core/settings",
-        "plugins/c9.core/api.js",
         {
             packagePath: "plugins/c9.ide.ui/ui",
             staticPrefix: "plugins/c9.ide.ui"
@@ -46,6 +45,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: baseProc
@@ -63,17 +63,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.dialog.common/question",
         "plugins/c9.ide.dialog.file/file",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "commands", "layout", "watcher", "clipboard",
-                "save", "panels", "tabManager", "preferences", "anims",
-                "auth.bootstrap", "info", "panels", "Panel", "proc", 
-                "dialog.error"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["upload", "dragdrop", "dialog.fileoverwrite"],
             provides: [],
@@ -92,9 +81,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         
         describe('upload', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 done();
             });
             
@@ -137,6 +123,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             }
         });
         
-        onload && onload();
+        register();
     }
 });

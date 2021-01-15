@@ -13,7 +13,7 @@ var address = system.args[1];
 var filter  = system.args[2];
 var branch  = system.args[3];
 
-var logAll = false;
+var logAll = true;
 if (!address) console.log("# No address, running against: ", TEST_SUITE_URL);
 if (filter) console.log("# Filter tests by ", filter);
 if (!address) address = TEST_SUITE_URL;
@@ -153,8 +153,10 @@ page.open(address, function(status) {
             var count = 0;
             var failCount = 0;
             var timeout = null;
+            var suites = 0;
 
             function runTest(name, next) {
+                suites++;
                 var subtests = 0;
                 var failed = false;
                 
@@ -168,14 +170,22 @@ page.open(address, function(status) {
                 
                 watchForTimeout(name);
                 
+                log("# %s", name);
                 window.c9Test.run(name, function(errors, out) {
-                    log("# %s", name);
+                    if (errors) console.error(errors);
+                    if (!out.tests || !out.tests.length) {
+                        out.tests = [{
+                            state: "failed",
+                            error: "test didn't complete"
+                        }];
+                    }
 
                     out.tests.forEach(function(test, i) {
                         count++;
-                        if (test.state == "passed") return log("ok %s %s", count, test.title);
-                        if (test.state == "failed") return fail(count, test);
-                        log("ok %s # SKIP %s", count, test.title);
+                        var index = suites + "." + i;
+                        if (test.state === "passed") return log("ok %s %s", index, test.title);
+                        if (test.state === "failed") return fail(index, test);
+                        log("ok %s # SKIP %s", index, test.title);
                     });
                     
                     if (failed) {

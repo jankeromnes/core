@@ -1,4 +1,4 @@
-/*global describe it before after = */
+/*global describe it before after bar */
 
 "use client";
 
@@ -26,7 +26,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             packagePath: "plugins/c9.core/settings",
             testing: true
         },
-        "plugins/c9.core/api.js",
         {
             packagePath: "plugins/c9.ide.ui/ui",
             staticPrefix: "plugins/c9.ide.ui"
@@ -53,23 +52,13 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: baseProc
         },
         "plugins/c9.fs/fs.cache.xml",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "menus", "commands", "layout", "watcher", 
-                "preferences", "anims", "clipboard", "dialog.alert", "auth.bootstrap",
-                "dialog.question", "debugger", "run.gui", "info", "dialog.error",
-                "dialog.file"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["console", "tabManager", "terminal", "output"],
             provides: [],
@@ -98,9 +87,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         
         describe('console', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-      
                 document.documentElement.style.paddingBottom = "200px";
                 
                 cnsl.once("ready", function() {
@@ -390,6 +376,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             });
         });
         
-        onload && onload();
+        register();
     }
 });

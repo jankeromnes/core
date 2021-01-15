@@ -20,6 +20,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: "plugins/c9.fs/mock"
@@ -28,15 +29,6 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             packagePath: "plugins/c9.ide.upload/upload_manager",
             filesPrefix: "/workspace",
             workerPrefix: "/static/plugins/c9.ide.upload"
-        },
-        
-        // Mock plugins
-        {
-            consumes: [],
-            provides: [
-                "auth.bootstrap", "info", "dialog.error", "api"
-            ],
-            setup: expect.html.mocked
         },
         
         {
@@ -195,7 +187,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                             fileEntry.file(function(file) {
                                 file.entry = fileEntry;
                                 next(null, file);
-                            }, onerror);
+                            }, next);
                         };
                         fileWriter.onerror = next;
                         
@@ -223,6 +215,6 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             });
         }
         
-        onload && onload();
+        register();
     }
 });

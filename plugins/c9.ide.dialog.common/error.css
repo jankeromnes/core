@@ -6,16 +6,14 @@
     z-index: 10000000;
     /*text-align: center;*/
     pointer-events: none;
-    .font-smoothing(@error-font-smoothing);
+    font-smoothing: @error-font-smoothing;
 }
 .errorlabel.anim, .disconnectlabel.anim{
     transition: top 0.2s;
-    -webkit-transition: top 0.2s; /* Safari */
     transition: top 0.2s;
 }
 .errorlabel.fade-in{
     transition: opacity 0.2s;
-    -webkit-transition: opacity 0.2s; /* Safari */
     transition: opacity 0.2s;
 }
 .errorlabel div{

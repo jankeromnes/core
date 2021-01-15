@@ -7,12 +7,18 @@ define(function(require, exports, module) {
 
 var baseLanguageHandler = require('plugins/c9.ide.language/base_handler');
 var workerUtil = require('plugins/c9.ide.language/worker_util');
-// var acorn = require("acorn/dist/acorn");
-var linter = require("./eslint_browserified");
+var linter;
 var handler = module.exports = Object.create(baseLanguageHandler);
 var util = require("plugins/c9.ide.language/worker_util");
 var yaml = require("./js-yaml");
 var stripJsonComments = require("./strip-json-comments");
+
+function loadLinter(callback) {
+    require(["./eslint_browserified"], function(Linter) {
+        linter = new Linter();
+        callback();
+    });
+}
 
 var defaultRules;
 var defaultEnv = {
@@ -32,7 +38,7 @@ var defaultParserOptions = {
         jsx: true, // enable JSX
         experimentalObjectRestSpread: true
     },
-    ecmaVersion: 6,
+    ecmaVersion: 8,
     // sourceType: "module"
 };
 var defaultGlobals = require("plugins/c9.ide.language.javascript/scope_analyzer").GLOBALS;
@@ -77,11 +83,6 @@ handler.init = function(callback) {
     rules["handle-callback-err"] = 1;
     rules["no-new-require"] = 2;
 
-    for (var r in rules) {
-        if (!(r in linter.defaults().rules))
-            throw new Error("Unknown rule: ", r);
-    }
-    
     loadConfigFile(true, function(err) {
         if (err) console.error(err);
         util.$watchDir("/", handler);
@@ -136,6 +137,11 @@ handler.handlesLanguage = function(language) {
 handler.analyze = function(value, ast, options, callback) {
     if (options.minimalAnalysis)
         return callback();
+    if (!linter) {
+        return loadLinter(function() {
+            callback(handler.analyzeSync(value, ast, options.path));
+        });
+    }
     callback(handler.analyzeSync(value, ast, options.path));
 };
 
@@ -159,7 +165,7 @@ handler.analyzeSync = function(value, ast, path) {
     config.globals = config.globals || defaultGlobals;
     config.parserOptions = config.parserOptions || defaultParserOptions;
     if (config.parserOptions.ecmaVersion == null)
-        config.parserOptions.ecmaVersion = 7;
+        config.parserOptions.ecmaVersion = 8;
     if (config.parserOptions.ecmaFeatures == null)
         config.parserOptions.ecmaFeatures = defaultParserOptions.ecmaFeatures;
     if (config.parserOptions.ecmaFeatures.experimentalObjectRestSpread == null)
@@ -172,7 +178,7 @@ handler.analyzeSync = function(value, ast, path) {
             args: handler.isFeatureEnabled("unusedFunctionArgs") ? "all" : "none"
         }
     ];
-    config.rules["jsx-uses-vars"] = 2;
+    config.rules["react/jsx-uses-vars"] = 2;
     config.rules["no-undef"] =
         handler.isFeatureEnabled("undeclaredVars") ? 1 : 0;
     
@@ -207,8 +213,15 @@ handler.analyzeSync = function(value, ast, path) {
         if (isJson && level !== "error")
             return;
 
-        if (m.message.match(/'([^']*)' is defined but never used/)) {
-            var target = RegExp.$1;
+        // convert to 0 based offsets
+        m.column--;
+        m.line--;
+        m.endLine--;
+        m.endColumn--;
+        
+        if (m.message.match(/but never used/)) {
+            var line = doc.getLine(m.line);
+            var target = line.slice(m.column, m.endColumn)
             if (target.toUpperCase() === target && target.toLowerCase() !== target)
                 return; // ignore unused constants
             if (target === "h")
@@ -219,11 +232,8 @@ handler.analyzeSync = function(value, ast, path) {
         if (m.ruleId && m.ruleId.match(/space|spacing/) && m.severity === 1)
             level = "info";
         
-        // work around column offset bug
-        m.column--;
-
         var ec;
-        if (m.message.match(/is not defined|was used before it was defined|is already declared|is already defined|unexpected identifier|defined but never used/i)) {
+        if (m.message.match(/is not defined|was used before it was defined|is already declared|is already defined|unexpected identifier|but never used/i)) {
             var line = doc.getLine(m.line);
             var id = workerUtil.getFollowingIdentifier(line, m.column);
             if (m.message.match(/is already defined/) && line.match("for \\(var " + id))

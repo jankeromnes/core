@@ -43,6 +43,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         "plugins/c9.ide.run.debug/breakpoints",
         {
             packagePath: "plugins/c9.ide.panels/panels",
@@ -61,14 +62,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.ui/focus",
         "plugins/c9.ide.editors/pane",
         "plugins/c9.ide.editors/tab",
-        //Mock Plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: ["commands", "layout", "watcher", "auth.bootstrap", "info",
-                "preferences", "anims", "menus", "clipboard", "immediate", "run",
-                "dialog.alert", "dialog.error"],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["breakpoints", "ui"],
             provides: [],
@@ -92,9 +85,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         
         describe('breakpoints', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 var bar = new ui.bar({
                     htmlNode: document.body
                 });
@@ -228,6 +218,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             });
         });
         
-        onload && onload();
+        register();
     }
 });

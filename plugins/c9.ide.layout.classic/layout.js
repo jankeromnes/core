@@ -19,18 +19,12 @@ define(function(require, exports, module) {
         
         var markup = require("text!./layout.xml");
         
-        // pre load themes
-        require("text!./themes/default-dark.less");
-        require("text!./themes/default-dark-gray.less");
-        require("text!./themes/default-light-gray.less");
-        require("text!./themes/default-light.less");
-        require("text!./themes/default-flat-light.less");
-        require("text!./themes/default-flat-dark.less");
-        
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
+        
+        var highResolution = c9.location.indexOf("2x=1") > -1;
         
         var dashboardUrl = options.dashboardUrl || "/dashboard.html";
         
@@ -75,8 +69,7 @@ define(function(require, exports, module) {
                   .replace(/@\{image-path\}/g, options.staticPrefix + "/images"), 
                   false, plugin);
                 
-                ui.insertCss(require("text!./less/main.less"), 
-                    options.staticPrefix, plugin);
+                ui.insertCss(require("./less/index"), options.staticPrefix, plugin);
             }
             
             draw();
@@ -90,8 +83,6 @@ define(function(require, exports, module) {
             // Load the skin
             ui.insertSkin({
                 "data": require("text!./skins.xml"),
-                "media-path": options.staticPrefix + "/images/",
-                "icon-path": options.staticPrefix + "/icons/"
             }, plugin);
             
             // Create UI elements
@@ -118,7 +109,7 @@ define(function(require, exports, module) {
             // Offline
             // preload the offline images programmatically:
             [
-                "noconnection.png", "close_tab_btn.png"
+                "close_tab_btn@1x.png"
             ].forEach(function(p) {
                 var img = new Image();
                 img.src = options.staticPrefix + "/images/" + p;
@@ -135,19 +126,30 @@ define(function(require, exports, module) {
             emit("draw");
         }
         
-        var allowedThemes = { 
-            "dark": 1, 
-            "dark-gray": 1, 
-            "light-gray": 1, 
-            "light": 1,
-            "flat-light": 1, 
-            "flat-dark": 1
-        };
+        var allowedThemes = {};
+        
+        function addTheme(data) {
+            allowedThemes[data.name] = data;
+            emit("themeAdded", data);
+        }
+        
+        function listThemes() {
+           return Object.keys(allowedThemes).map(function(key) {
+               return allowedThemes[key];
+           });
+        }
+        
+        function setImageResolution(value) {
+            if (window.matchMedia) {
+                var mq = window.matchMedia("(-webkit-min-device-pixel-ratio: 1.25), (min-resolution: 1.25dppx) ");
+                if (mq.matches || highResolution)
+                    return value.replace(/@1x/g, "@2x");
+            }
+            return value;
+        }
         
         function updateTheme(noquestion, type) {
             var sTheme = settings.get("user/general/@skin");
-            if (!allowedThemes[sTheme])
-                sTheme = "dark";
             
             if (noquestion === undefined)
                 noquestion = !theme;
@@ -159,18 +161,25 @@ define(function(require, exports, module) {
                 theme = sTheme;
                 
                 if (ui.packedThemes) {
-                    preload.getTheme(theme, function(err, theme) {
-                        if (err)
+                    preload.getTheme(theme, function(err, themeCss) {
+                        if (sTheme !== theme)
                             return;
+                        if (err) {
+                            if (!allowedThemes[sTheme])
+                                settings.set("user/general/@skin", "dark");
+                            return;
+                        }
                         // Remove Current Theme
                         if (removeTheme)
                             removeTheme();
                         var url = options.staticPrefix.replace(/c9.ide.layout.classic\/?$/, "");
-                        theme = theme.replace(/(url\(["']?)\/static\/plugins\//g, function(_, x) {
+                        themeCss = themeCss.replace(/(url\(["']?)\/static\/plugins\//g, function(_, x) {
                             return x + url;
                         });
+                        themeCss = setImageResolution(themeCss);
+                        
                         // Load the theme css
-                        ui.insertCss(theme, false, {
+                        ui.insertCss(themeCss, false, {
                             addOther: function(remove) { removeTheme = remove; }
                         });
                         changeTheme();
@@ -179,19 +188,21 @@ define(function(require, exports, module) {
                     changeTheme();
             }
             function changeTheme() {
-                emit("eachTheme", { changed: true });
-                setGeckoMask();
-                
-                var auto = emit("themeChange", { 
+                var event = { 
                     theme: theme, 
                     oldTheme: oldTheme,
                     type: type
-                }) !== false;
+                };
+                emit("eachTheme", { changed: true });
+                emit("themeChange", event);
+                setGeckoMask();
+                
+                var auto = emit("validateThemeChange", event) !== false;
                 
                 if (!oldTheme || noquestion) return;
                 
                 if (auto)
-                    return emit("themeDefaults", { theme: theme, type: type });
+                    return emit("themeDefaults", { theme: theme, type: type, force: false });
                 
                 question.show("Set default colors?", 
                     "Would you like to reset colors to their default value?",
@@ -215,7 +226,7 @@ define(function(require, exports, module) {
                 "Click Yes to change the theme or No to keep the current theme.",
                 function() { // yes
                     ignoreTheme = true;
-                    var theme = { "dark": "flat-dark", "light": "flat-light" }[kind];
+                    var theme = { "dark": "dark", "light": "flat-light" }[kind];
                     settings.set("user/general/@skin", theme);
                     updateTheme(false, type);
                     ignoreTheme = false;
@@ -239,7 +250,7 @@ define(function(require, exports, module) {
             var isFlatTheme = theme.indexOf("flat") > -1;
             var img = options.staticPrefix + "/images/" + (
                 isFlatTheme
-                    ? "gecko_mask_flat_light.png"
+                    ? "gecko_mask_flat_light@" + (highResolution ? 2 : 1) + "x.png"
                     : "gecko_mask.png");
             var width = isFlatTheme ? 76 : 46;
             var height = isFlatTheme ? 26 : 24;
@@ -468,7 +479,7 @@ define(function(require, exports, module) {
             });
             
             function show(amlNode, callback) {
-                if (!amlNode)
+                if (!amlNode || !plugin.hasTheme)
                     return callback();
 
                 anims.animateSplitBoxNode(amlNode, {
@@ -592,7 +603,8 @@ define(function(require, exports, module) {
             get hasTheme() {
                 return !ui.packedThemes || !!removeTheme
             },
-
+            addTheme: addTheme,
+            listThemes: listThemes,
             /**
              * Returns an AMLElement that can server as a parent.
              * @param {Plugin} plugin  The plugin for which to find the parent.

@@ -2,8 +2,7 @@
 
 "use client";
 
-require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai) {
-    var expect = chai.expect;
+    var expect = require("lib/chai/chai").expect;
     
     expect.setupArchitectTest([
         {
@@ -20,19 +19,14 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         
-        //Mock Plugins
-        {
-            consumes: ["Plugin"],
-            provides: ["auth.bootstrap", "info", "dialog.error"],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["net", "proc"],
             provides: [],
             setup: main
         }
-    ], architect);
+    ]);
     
     function main(options, imports, register) {
         var net = imports.net;
@@ -44,7 +38,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 
                 it("should connect to a port", function(done) {
                     var code = 
-                      "var server = require('net').createServer(function(c) {"
+                      "var server = require\('net').createServer(function(c) {"
                           + "c.write('1');"
                           + "c.pipe(c);"
                       + "});"
@@ -77,6 +71,5 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             });
         });
         
-        onload && onload();
+        register();
     }
-});

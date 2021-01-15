@@ -46,17 +46,17 @@ define(function(require, exports, module) {
         var handleEmit = handle.getEmitter();
 
         var defaults = {
-            "flat-light": ["#e0e5e7", "#333333", "#aebabf", false],
-            "flat-dark": ["#003a58", "#FFFFFF", "#225477", true],
-            "light": ["#eef7ff", "#333333", "#89c1ff", false],
-            "light-gray": ["#eef7ff", "#333333", "#89c1ff", false],
-            "dark": ["#003a58", "#FFFFFF", "#225477", true],
-            "dark-gray": ["#003a58", "#FFFFFF", "#225477", true]
+            "flat-light": ["#e0e5e7", "#333333", "#aebabf"],
+            "flat-dark": ["#003a58", "#FFFFFF", "#225477"],
+            "light": ["#eef7ff", "#333333", "#89c1ff"],
+            "light-gray": ["#eef7ff", "#333333", "#89c1ff"],
+            "dark": ["#003a58", "#FFFFFF", "#225477"],
+            "dark-gray": ["#003a58", "#FFFFFF", "#225477"]
         };
 
         handle.on("load", function() {
             // Import CSS
-            ui.insertCss(require("text!./style.css"), options.staticPrefix, handle);
+            ui.insertCss(require("text!./style.css"), null, handle);
 
             commands.addCommand({
                 name: "showoutput",
@@ -129,8 +129,8 @@ define(function(require, exports, module) {
                     ["backgroundColor", colors[0]],
                     ["foregroundColor", colors[1]],
                     ["selectionColor", colors[2]],
-                    ["nosavequestion", "false"],
-                    ["keepOutput", "false"]
+                    ["nosavequestion", false],
+                    ["keepOutput", false]
                 ]);
 
                 setSettings();
@@ -138,12 +138,17 @@ define(function(require, exports, module) {
 
             settings.on("user/output", setSettings);
 
-            layout.on("themeChange", function(e) {
-                var colors = defaults[e.oldTheme];
-                if (!colors) return;
-                if (!(settings.get("user/output/@backgroundColor") == colors[0] &&
-                  settings.get("user/output/@foregroundColor") == colors[1] &&
-                  settings.get("user/output/@selectionColor") == colors[2]))
+            layout.on("validateThemeChange", function(e) {
+                var oldColors = defaults[e.oldTheme];
+                var newColors = defaults[e.theme];
+                var colors = [
+                    settings.get("user/output/@backgroundColor"),
+                    settings.get("user/output/@foregroundColor"),
+                    settings.get("user/output/@selectionColor"),
+                ];
+                var matchesOldTheme = oldColors && oldColors.toString() == colors.toString();
+                var matchesNewTheme = newColors && newColors.toString() == colors.toString();
+                if (!matchesOldTheme && !matchesNewTheme)
                     return false;
             });
 
@@ -345,6 +350,8 @@ define(function(require, exports, module) {
                         continue;
                     }
                     if (c === " ") {
+                        if (!results.raw)
+                            results.raw = pathArgs.substr(i);
                         if (lastStart < i)
                             results.push(pathArgs.substring(lastStart, i));
                         lastStart = i + 1;
@@ -1037,13 +1044,13 @@ define(function(require, exports, module) {
                                 tab.close();
 
                                 if (question.dontAsk)
-                                    settings.set("user/output/nosavequestion", "true");
+                                    settings.set("user/output/nosavequestion", true);
                             },
                             function() { // No
                                 // do nothing; allow user to set a name
 
                                 if (question.dontAsk)
-                                    settings.set("user/output/nosavequestion", "true");
+                                    settings.set("user/output/nosavequestion", true);
                             },
                             { showDontAsk: true, yes: "Close", no: "Cancel" });
                         return false;

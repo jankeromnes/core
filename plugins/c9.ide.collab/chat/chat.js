@@ -35,7 +35,7 @@ define(function(require, exports, module) {
             index: 200,
             caption: "Group Chat",
             textselect: true,
-            style: "flex:1;-webkit-flex:1"
+            style: "flex:1;"
         });
 
         // var emit = plugin.getEmitter();
@@ -89,6 +89,7 @@ define(function(require, exports, module) {
                 minLines: 2,
                 fontFamily: "inherit"
             });
+            chatInput.ace.session.$enableVarChar = true;
             chatInput.ace.session.$setFontMetrics(chatInput.ace.renderer.$fontMetrics);
 
             plugin.addElement(chatInput);
@@ -320,6 +321,9 @@ define(function(require, exports, module) {
             var html = document.createElement("p");
             html.id = "ot_chat_" + msg.id;
             html.userId = msg.userId;
+            
+            if (msg.userId == workspace.myUserId)
+                html.className = "you";
 
             var borderEl = document.createElement("span");
             html.appendChild(borderEl);

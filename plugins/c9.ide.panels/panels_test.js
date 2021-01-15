@@ -1,4 +1,4 @@
-/*global describe it before after bar bar2 */
+/*global describe it before after bar */
 
 "use client";
 
@@ -14,7 +14,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             settings: "default",
             testing: true
         },
-        "plugins/c9.core/api.js", 
         "plugins/c9.ide.ui/lib_apf",
         "plugins/c9.ide.ui/anims",
         {
@@ -30,15 +29,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.panels/area",
         "plugins/c9.ide.panels/panel",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "c9", "proc", "info", "auth",
-                "commands", "menus", "commands", "layout", "fs", "tabManager"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["panels", "commands", "layout", "Panel"],
             provides: [],
@@ -53,7 +43,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         var layout = imports.layout;
         
         var emitter = require("events").EventEmitter;
-        
+        var bar2;
         
         var p = [];
         
@@ -87,9 +77,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         
         describe('panels', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 layout.findParent();
                 
                 bar.$ext.style.background = "rgba(220, 220, 220, 0.93)";
@@ -432,6 +419,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             }
         });
         
-        onload && onload();
+        register();
     }
 });

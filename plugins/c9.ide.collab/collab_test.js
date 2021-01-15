@@ -24,7 +24,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.core/ext",
         "plugins/c9.core/http-xhr",
         "plugins/c9.core/util",
-        "plugins/c9.core/api.js",
         "plugins/c9.ide.ui/lib_apf",
         {
             packagePath: "plugins/c9.core/settings",
@@ -49,6 +48,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: baseProc
@@ -74,34 +74,19 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         },
         {
             packagePath: "plugins/c9.ide.collab/cursor_layer",
-            staticPrefix: "plugins/c9.ide.collab"
         },
         "plugins/c9.ide.collab/author_layer",
         {
             packagePath: "plugins/c9.ide.collab/timeslider/timeslider",
-            staticPrefix: "plugins/c9.ide.collab/timeslider"
         },
         {
             packagePath: "plugins/c9.ide.collab/chat/chat",
-            staticPrefix: "plugins/c9.ide.collab/chat"
         },
         "plugins/c9.ide.collab/members/members_panel",
         {
             packagePath: "plugins/c9.ide.collab/members/members",
-            staticPrefix: "plugins/c9.ide.collab/members"
         },
 
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "commands", "layout", "watcher", "Panel", "info", "save", "dialog.file",
-                // "menus", "Menu", "MenuItem", "Divider", - "plugins/c9.ide.ui/menus",
-                "dialog.alert", "dialog.confirm", "dialog.error", "dialog.question", "dialog.fileoverwrite",
-                "panels", "preferences", "clipboard", "auth.bootstrap", "anims", "debugger", "run.gui"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["fs", "tabManager", "save",
                 "collab.connect", "collab.workspace", "collab", "OTDocument",

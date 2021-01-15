@@ -10,7 +10,7 @@
     border-right : @preferences-nav-border;
     
     background: @preferences-nav-background;
-    .box-shadow(~"0 1px 0 0 @{preferences-nav-shadow-color} inset");
+    box-shadow: 0 1px 0 0 @preferences-nav-shadow-color inset;
     z-index: 1;
     box-sizing: border-box;
 }
@@ -52,7 +52,7 @@
     padding: @preferences-nav-main-padding;
     /* font-weight: normal; */
     position: relative;
-    .font-smoothing(@preferences-nav-main-font-smoothing);
+    font-smoothing: @preferences-nav-main-font-smoothing;
 }
 .bar-preferences .navigation .level1 > a:after {
     .image-2x("@{tree-arrow}", 20px, 10px);
@@ -173,7 +173,7 @@
     color : @preferences-form-label-color;
     font-size : 12px;
     text-overflow : ellipsis;
-    .font-smoothing(@preferences-form-label-font-smoothing);
+    font-smoothing: @preferences-form-label-font-smoothing;
 }
 .bar-preferences .blackbutton{
     min-height: @preferences-button-height;
@@ -191,7 +191,7 @@
     height: 15px;
     color: @spinner-color;
     padding: @preferences-textbox-padding;
-    .font-smoothing(true);
+    font-smoothing: true;
     border-radius: @preferences-textbox-border-radius;
     font-family: @preferences-textbox-font-family;
     font-size: @preferences-textbox-font-size;
@@ -205,7 +205,7 @@
     border: 1px solid @spinner-border-color;
     padding: @textarea-padding;
     color: @spinner-color;
-    .box-shadow(~"none");
+    box-shadow: none;
     line-height: @textarea-line-height;
     border-radius: @textarea-border-radius;
 }
@@ -269,7 +269,7 @@
 }
 .bar-preferences .blackdg .tree-headings {
     background: @preferences-datagrid-header-background;
-    .font-smoothing(@preferences-datagrid-font-smoothing);
+    font-smoothing: @preferences-datagrid-font-smoothing;
     font-weight: @preferences-datagrid-header-font-weight;
     border-bottom: @preferences-datagrid-header-border-bottom;
 }
@@ -288,7 +288,7 @@
     height: @preferences-datagrid-row-height;
 }
 .bar-preferences .blackdg .tree-row.selected{
-    .font-smoothing(@preferences-datagrid-font-smoothing);
+    font-smoothing: @preferences-datagrid-font-smoothing;
 }
 .bar-preferences .blackdg .tree-row > .tree-column{
     padding: @preferences-datagrid-cell-padding;

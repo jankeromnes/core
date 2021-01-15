@@ -32,7 +32,6 @@ require([
             packagePath: "plugins/c9.core/settings",
             testing: true
         },
-        "plugins/c9.core/api.js",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.ide.keys/editor",
         {
@@ -63,17 +62,8 @@ require([
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "menus", "layout", "watcher", "save", "clipboard",
-                "dialog.confirm", "dialog.alert", "auth.bootstrap", "info",
-                "dialog.error"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["Plugin", "tabManager", "preferences", "settings", "ui", "util", "commands", "preferences.general"],
             provides: [],
@@ -99,8 +89,6 @@ require([
             this.timeout(20000);
             
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
                 
                 bar.$ext.style.height = "66%";
                 
@@ -200,6 +188,6 @@ require([
            }
         });
         
-        onload && onload();
+        register();
     }
 });

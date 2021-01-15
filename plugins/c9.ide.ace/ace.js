@@ -1,12 +1,12 @@
-define(function(require, exports, module) {
+/*global apf*/
     "use strict";
     main.consumes = [
         "Editor", "editors", "commands", "menus", "Menu", "MenuItem", "Divider",
         "settings", "c9", "preferences", "ui", "tabManager", "layout", "util",
-        "threewaymerge", "error_handler"
+        "threewaymerge", "error_handler", "apf"
     ];
     main.provides = ["ace"];
-    return main;
+    module.exports = main;
 
     function main(options, imports, register) {
         var Editor = imports.Editor;
@@ -15,6 +15,7 @@ define(function(require, exports, module) {
         var menus = imports.menus;
         var settings = imports.settings;
         var layout = imports.layout;
+        var apf = imports.apf;
         var c9 = imports.c9;
         var ui = imports.ui;
         var util = imports.util;
@@ -93,11 +94,12 @@ define(function(require, exports, module) {
         var isMinimal = options.minimal;
         var themeLoaded = {};
         var themeCounter = 100;
-        var lastTheme, grpSyntax, grpThemes;
+        var lastTheme, grpSyntax, grpThemes, grpUiThemes;
         
-        var theme;
+        var currentTheme;
         var skin = settings.get("user/general/@skin");
         var defaultThemes = {
+            "jett-dark": "plugins/c9.ide.theme.jett/ace.themes/jett",
             "light": "ace/theme/cloud9_day",
             "light-gray": "ace/theme/cloud9_day",
             "flat-light": "ace/theme/cloud9_day",
@@ -117,7 +119,7 @@ define(function(require, exports, module) {
         } else {
             require([defaultThemes[skin]], function() {}); // Preload Themes
         }
-        handle.__defineGetter__("theme", function() { return theme; });
+        handle.__defineGetter__("theme", function() { return currentTheme; });
         
         function addCorner(ace) {
             if (isMinimal)
@@ -144,7 +146,7 @@ define(function(require, exports, module) {
         
         function setTheme(path, isPreview, fromServer, $err) {
             // Get Theme or wait for theme to load
-            theme = fromServer;
+            var theme = fromServer;
             if (/custom_themes/.test(path)) {
                 theme = themes[path];
                 if (!theme) return;
@@ -157,6 +159,7 @@ define(function(require, exports, module) {
             }
             
             if (!isPreview) {
+                currentTheme = theme;
                 if (settings.get("user/ace/@theme") != path) {
                     settings.set("user/ace/@theme", path);
                     
@@ -233,49 +236,49 @@ define(function(require, exports, module) {
         var STRING = "get";
         var NUMBER = "getNumber";
         
-        // Name, Default Value, Type, Old Name, Store in Project Settings
         var font = "Monaco, Menlo, Ubuntu Mono, Consolas, source-code-pro, monospace";
+        // Name, Default Value, Type
         var aceSettings = [
             // detected from document value
-            ["newLineMode", "unix", STRING, "newlinemode", 1],
+            ["newLineMode", "unix", STRING],
             // Per document
-            ["tabSize", 4, NUMBER, "tabsize", 1],
-            ["useSoftTabs", true, BOOL, "softtabs", 1],
-            ["guessTabSize", true, BOOL, "guesstabsize", 1],
-            ["useWrapMode", false, BOOL, "wrapmode"],
-            ["wrapToView", true, BOOL, "wrapmodeViewport"],
+            ["tabSize", 4, NUMBER],
+            ["useSoftTabs", true, BOOL],
+            ["guessTabSize", true, BOOL],
+            ["useWrapMode", false, BOOL],
+            ["wrapToView", true, BOOL],
             
             // Ace
-            ["fontSize", "12", NUMBER, "fontsize"],
-            ["fontFamily", font, STRING, "fontfamily"],
+            ["fontSize", 12, NUMBER],
+            ["fontFamily", font, STRING],
             ["antialiasedfonts", false, BOOL],
-            ["overwrite", false, BOOL, "overwrite"],
-            ["selectionStyle", "line", STRING, "selectstyle"],
-            ["cursorStyle", "ace", STRING, "cursorstyle"],
-            ["highlightActiveLine", true, BOOL, "activeline"],
-            ["highlightGutterLine", true, BOOL, "gutterline"],
-            ["showInvisibles", false, BOOL, "showinvisibles"],
-            ["showPrintMargin", true, BOOL, "showprintmargin"],
-            ["displayIndentGuides", true, BOOL, "showindentguides"],
-            ["printMarginColumn", "80", NUMBER, "printmargincolumn"],
-            ["behavioursEnabled", true, BOOL, "behaviors"],
-            ["wrapBehavioursEnabled", false, BOOL, "wrapbehaviors"],
-            ["scrollSpeed", "2", NUMBER, "scrollspeed"],
-            ["showGutter", true, BOOL, "gutter"],
+            ["overwrite", false, BOOL],
+            ["selectionStyle", "line", STRING],
+            ["cursorStyle", "ace", STRING],
+            ["highlightActiveLine", true, BOOL],
+            ["highlightGutterLine", true, BOOL],
+            ["showInvisibles", false, BOOL],
+            ["showPrintMargin", true, BOOL],
+            ["displayIndentGuides", true, BOOL],
+            ["printMarginColumn", 80, NUMBER],
+            ["behavioursEnabled", true, BOOL],
+            ["wrapBehavioursEnabled", false, BOOL],
+            ["scrollSpeed", 2, NUMBER],
+            ["showGutter", true, BOOL],
             ["showLineNumbers", true, STRING],
-            ["showFoldWidgets", true, BOOL, "folding"],
-            ["fadeFoldWidgets", true, BOOL, "fadefoldwidgets"],
-            ["highlightSelectedWord", true, BOOL, "highlightselectedword"],
-            ["animatedScroll", true, BOOL, "animatedscroll"],
-            ["scrollPastEnd", "0.5", NUMBER],
-            ["mergeUndoDeltas", "off", STRING],
-            ["theme", defaultThemes[skin], STRING, "theme"]
+            ["showFoldWidgets", true, BOOL],
+            ["fadeFoldWidgets", true, BOOL],
+            ["highlightSelectedWord", true, BOOL],
+            ["animatedScroll", true, BOOL],
+            ["scrollPastEnd", 0.5, NUMBER],
+            ["mergeUndoDeltas", true, STRING],
+            ["theme", defaultThemes[skin], STRING]
         ];
         var docSettings = aceSettings.slice(1, 6);
-        var editorSettings = aceSettings.slice(6);
         var projectSettings = aceSettings.slice(0, 4);
         var userSettings = aceSettings.slice(4);
         var docLut = {}; docSettings.forEach(function(x) { docLut[x[0]] = x; });
+        var lastSettings = {};
         
         /***** Undo Manager *****/
         
@@ -482,21 +485,14 @@ define(function(require, exports, module) {
             setCommands();
             
             // Settings
-            var lastSettings = {};
             function updateSettings(e, list, prefix) {
                 var options = {};
                 (list || aceSettings).forEach(function(setting) {
-                    options[setting[0]] 
-                        = settings[setting[2]](prefix + "/ace/@" + setting[0]);
-                });
-                
-                // When loading from settings only set editor settings
-                docSettings.forEach(function(setting) {
-                    var val = options[setting[0]];
-                    if (val !== undefined) {
-                        setting[1] = val;
-                        delete options[setting[0]];
-                    }
+                    var value = settings[setting[2]](prefix + "/ace/@" + setting[0]);
+                    var name = setting[0];
+                    lastSettings[name] = value;
+                    if (!docLut[name])
+                        options[name] = value;
                 });
                 
                 handleEmit("settingsUpdate", {
@@ -505,14 +501,12 @@ define(function(require, exports, module) {
                 
                 if (options.theme)
                     setTheme(options.theme);
-
-                util.extend(lastSettings, options);
             }
             
+            settings.setDefaults("user/ace", userSettings);
+            settings.setDefaults("project/ace", projectSettings);
+            
             settings.on("read", function(e) {
-                settings.setDefaults("user/ace", userSettings);
-                settings.setDefaults("project/ace", projectSettings);
-                
                 // TODO remove when there is a better way of loading custom themes
                 var customTheme = settings.get("user/ace/@customTheme");
                 if (customTheme)
@@ -547,19 +541,33 @@ define(function(require, exports, module) {
             
             layout.on("themeChange", function(e) {
                 setFontSmoothing();
-                
-                if (e.type !== "ace" 
-                  && settings.get("user/ace/@theme") != defaultThemes[e.oldTheme])
-                    return false;
+                // reset this, since main theme can override ace theme colors
+                themeLoaded = {};
+                lastTheme = null;
+                setTheme(settings.get("user/ace/@theme"));
+            });
+            
+            layout.on("validateThemeChange", function(e) {
+                if (e.type !== "ace") {
+                    var themeName = settings.get("user/ace/@theme");
+                    if (themeName == defaultThemes[e.oldTheme])
+                        return;
+                    var style = currentTheme && (currentTheme.isDark ? "dark" : "light");
+                    if (e.theme.indexOf(style) == -1)
+                        return false;
+                }
             });
             
             layout.on("themeDefaults", function(e) {
-                if (e.type != "ace")
+                var style = currentTheme && (currentTheme.isDark ? "dark" : "light");
+                if (e.force == false && e.theme.indexOf(style) != -1)
+                    return;
+                if (e.type != "ace" && defaultThemes[e.theme])
                     handle.setTheme(defaultThemes[e.theme]);
             }, handle);
             
             // CSS
-            ui.insertCss(cssString, options.staticPrefix, handle);
+            ui.insertCss(cssString, null, handle);
         });
         handle.on("unload", function() {
             drawn = false;
@@ -1216,40 +1224,60 @@ define(function(require, exports, module) {
             /**** Themes ****/
             
             grpThemes = new ui.group();
+            grpUiThemes = new ui.group();
             
             menus.addItemByPath("View/Themes/", new ui.menu({
                 "onprop.visible": function(e) {
-                    if (e.value)
+                    if (e.value) {
                         grpThemes.setValue(settings.get("user/ace/@theme"));
+                        grpUiThemes.setValue(settings.get("user/general/@skin"));
+                    }
+                    if (themeMenuShown)
+                        return;
+                    themeMenuShown = true;
+                    // Create Theme Menus
+                    menus.addItemByPath("View/Themes/Ui Themes/", null, 0, handle);
+                    menus.addItemByPath("View/Themes/~", new ui.divider(), themeCounter += 100, handle);
+                    layout.listThemes().forEach(function(theme) {
+                        menus.addItemByPath("View/Themes/Ui Themes/" + theme.caption, new ui.item({
+                            type: "radio",
+                            value: theme.name,
+                            group: grpUiThemes,
+                            onclick: function(e) {
+                                var themeName = e.currentTarget.value;
+                                settings.set("user/general/@skin", themeName);
+                            }
+                        }), 0, handle);
+                    });
+                    
+                    for (var name in themes) {
+                        if (themes[name] instanceof Array) {
+                            
+                            // Add Menu Item (for submenu)
+                            menus.addItemByPath("View/Themes/" + name + "/", null, themeCounter++, handle);
+                            
+                            themes[name].forEach(function (n) {
+                                // Add Menu Item
+                                var themeprop = Object.keys(n)[0];
+                                addThemeMenu(name + "/" + themeprop, n[themeprop], -1);
+                            });
+                        }
+                        else {
+                            // Add Menu Item
+                            addThemeMenu(name, null, themeCounter++);
+                        }
+                    }
                 }
             }), 350000, handle);
-            
-            // Create Theme Menus
-            for (var name in themes) {
-                if (themes[name] instanceof Array) {
-                    
-                    // Add Menu Item (for submenu)
-                    menus.addItemByPath("View/Themes/" + name + "/", null, themeCounter++, handle);
-                    
-                    themes[name].forEach(function (n) {
-                        // Add Menu Item
-                        var themeprop = Object.keys(n)[0];
-                        addThemeMenu(name + "/" + themeprop, n[themeprop], -1);
-                    });
-                }
-                else {
-                    // Add Menu Item
-                    addThemeMenu(name, null, themeCounter++);
-                }
-            }
             
             /**** Syntax ****/
             
             grpSyntax = new ui.group();
-            handle.addElement(grpNewline, grpSyntax, grpThemes);
+            handle.addElement(grpNewline, grpSyntax, grpThemes, grpUiThemes);
         }
         
         var preview;
+        var themeMenuShown;
         var setMenuThemeDelayed = lang.delayedCall(function() {
             setMenuTheme(preview, true);
         }, 150);
@@ -1257,6 +1285,8 @@ define(function(require, exports, module) {
             setTheme(path || settings.get("user/ace/@theme"), isPreview);
         }
         function addThemeMenu(name, path, index, plugin) {
+            if (!themeMenuShown) 
+                return;
             menus.addItemByPath("View/Themes/" + name, new ui.item({
                 type: "radio",
                 value: path || themes[name],
@@ -1277,22 +1307,29 @@ define(function(require, exports, module) {
                 }
             }), index == -1 ? undefined : index || themeCounter++, plugin || handle);
         }
-        function addTheme(css, plugin) {
-            var theme = { cssText: css };
-            var firstLine = css.split("\n", 1)[0].replace(/\/\*|\*\//g, "").trim();
-            firstLine.split(";").forEach(function(n) {
-                if (!n) return;
-                var info = n.split(":");
-                theme[info[0].trim()] = info[1].trim();
-            });
-            theme.isDark = theme.isDark == "true";
+        function addTheme(theme, plugin) {
+            if (typeof theme == "string") {
+                var css = theme;
+                theme = { cssText: css };
+                var firstLine = css.split("\n", 1)[0].replace(/\/\*|\*\//g, "").trim();
+                firstLine.split(";").forEach(function(n) {
+                    if (!n) return;
+                    var info = n.split(":");
+                    theme[info[0].trim()] = info[1].trim();
+                });
+                theme.isDark = theme.isDark == "true";
+                theme.id = "custom_themes/" + theme.name;
+                theme.customCss = css;
+            }
             
-            theme.id = "custom_themes/" + theme.name;
-            theme.customCss = css;
             define.undef(theme.id);
-            define(theme.id, [], theme);
+            if (theme.cssText)
+                define(theme.id, [], theme);
             
-            themes[theme.id] = theme;
+            if (!theme.name)
+                theme.name = theme.caption;
+            
+            themes[theme.caption || theme.id] = theme.id;
             
             addThemeMenu(theme.name, theme.id, null, plugin);
             
@@ -1568,41 +1605,6 @@ define(function(require, exports, module) {
             return s;
         }
         
-        /***** Gutter Renderers *****/
-        
-        var relativeNumbers = {
-            getText: function(session, row) {
-                return (Math.abs(session.selection.lead.row - row) || (row + 1 + (row < 9 ? "\xb7" : ""))) + "";
-            },
-            getWidth: function(session, lastLineNumber, config) {
-                return session.getLength().toString().length * config.characterWidth;
-            },
-            update: function(e, editor) {
-                editor.renderer.$loop.schedule(editor.renderer.CHANGE_GUTTER);
-            },
-            attach: function(editor) {
-                editor.renderer.$gutterLayer.$renderer = this;
-                editor.on("changeSelection", this.update);
-            },
-            detach: function(editor) {
-                editor.renderer.$gutterLayer.$renderer = null;
-                editor.off("changeSelection", this.update);
-            }
-        };
-        
-        var noNumbers = {
-            getText: function(session, row) {
-                return "";
-            },
-            getWidth: function(session, lastLineNumber, config) {
-                return "";
-            },
-            attach: function(editor) {
-            },
-            detach: function(editor) {
-            },
-        };
-        
         /**
          * The ace handle, responsible for events that involve all ace
          * instances. This is the object you get when you request the ace
@@ -1823,7 +1825,7 @@ define(function(require, exports, module) {
                 container.style.position = "absolute";
                 container.style.left = "0px";
                 container.style.right = "0px";
-                container.style.top = ui.getStyle(e.htmlNode, "paddingTop");
+                container.style.top = "7px";
                 container.style.bottom = "0px";
         
                 // Create Ace editor instance
@@ -1896,7 +1898,7 @@ define(function(require, exports, module) {
                 
                 handle.on("themeChange", function(e) {
                     ace.setTheme(e.path);
-                    changeTheme();
+                    changeTheme(e);
                     
                     emit("themeChange", e);
                 }, plugin);
@@ -2115,11 +2117,11 @@ define(function(require, exports, module) {
                 ace.renderer.animateScrolling(initialScroll);
             }
             
-            function changeTheme() {
+            function changeTheme(e) {
                 if (immutableSkin || !currentSession) 
                     return;
                 
-                var theme = handle.theme;
+                var theme = e && e.theme || handle.theme;
                 if (handle.theme && currentSession.cssClass != theme.cssClass) {
                     var tab = currentDocument.tab;
                     var html = plugin.aml.$int;
@@ -2222,20 +2224,9 @@ define(function(require, exports, module) {
                         break;
                     case "showLineNumbers":
                         var renderer = ace.renderer;
-                        var gutterRenderer = renderer.$gutterLayer.$renderer;
-                        if (gutterRenderer && gutterRenderer.detach)
-                            gutterRenderer.detach(ace);
-                        if (value == "relative")
-                            gutterRenderer = relativeNumbers;
-                        else if (value)
-                            gutterRenderer = null;
-                        else
-                            gutterRenderer = noNumbers;
+                        ace.setOption("relativeLineNumbers", value == "relative");
+                        ace.setOption("showLineNumbers", !!value);
                         dom.setCssClass(renderer.$gutter, "ace_gutter-compact", !value);
-                        renderer.$gutterLayer.$renderer = gutterRenderer;
-                        if (gutterRenderer && gutterRenderer.attach)
-                            gutterRenderer.attach(ace);
-                        renderer.$loop.schedule(renderer.CHANGE_GUTTER);
                         return;
                 }
                 
@@ -2496,7 +2487,7 @@ define(function(require, exports, module) {
                 if (!e.state || !e.state.options)
                     docSettings.forEach(function(setting) {
                         var name = setting[0];
-                        setOption(name, setting[1], c9Session);
+                        setOption(name, lastSettings[name], c9Session);
                     });
                 
                 if (e.state && e.state.customSyntax)
@@ -2640,10 +2631,10 @@ define(function(require, exports, module) {
             });
             plugin.on("paste", function(e) {
                 if (e.native) return; // Ace handles this herself
-                
-                var data = e.clipboardData.getData("text/plain");
-                if (data !== false)
-                    ace.onPaste(data);
+                e.clipboardData.getData("text/plain", function(err, data) {
+                    if (!err && data && data !== false)
+                        ace.onPaste(data);
+                });
             });
             plugin.on("blur", function() {
                 blur();
@@ -2914,4 +2905,3 @@ define(function(require, exports, module) {
             ace: handle
         });
     }
-});

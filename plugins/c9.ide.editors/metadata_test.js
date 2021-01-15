@@ -1,4 +1,4 @@
-/*global describe it before after bar*/
+/*global describe it before after bar apf*/
 
 "use client";
 
@@ -26,7 +26,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             packagePath: "plugins/c9.core/settings",
             testing: true
         },
-        "plugins/c9.core/api.js",
         {
             packagePath: "plugins/c9.ide.ui/ui",
             staticPrefix: "plugins/c9.ide.ui"
@@ -53,6 +52,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         },
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         "plugins/c9.fs/proc",
         {
             packagePath: "plugins/c9.fs/fs",
@@ -70,16 +70,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.dialog.common/question",
         "plugins/c9.ide.dialog.file/file",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "menus", "commands", "layout", "watcher", "save", 
-                "preferences", "anims", "clipboard", "auth.bootstrap", "info",
-                "dialog.error"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["tabManager", "fs", "settings", "metadata", "dialog.question"],
             provides: [],
@@ -94,14 +84,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         var metadata = imports.metadata;
         var question = imports["dialog.question"];
         
-        function countEvents(count, expected, done) {
-            if (count == expected) 
-                done();
-            else
-                throw new Error("Wrong Event Count: "
-                    + count + " of " + expected);
-        }
-        
         expect.html.setConstructor(function(tab) {
             if (typeof tab == "object")
                 return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
@@ -111,9 +93,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             this.timeout(20000);
             
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 bar.$ext.style.background = "rgba(220, 220, 220, 0.93)";
                 bar.$ext.style.position = "fixed";
                 bar.$ext.style.left = "20px";
@@ -460,6 +439,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             }
         });
         
-        onload && onload();
+        register();
     }
 });

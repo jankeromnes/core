@@ -65,7 +65,7 @@ define(function(require, exports, module) {
                 match: "name",
                 value: "name",
                 width: "60%",
-                icon: "debugger/genericvariable_obj.gif",
+                icon: true,
                 type: "tree",
                 editor: "textbox"
             }, { 
@@ -100,6 +100,8 @@ define(function(require, exports, module) {
                 updateAll();
             });
             debug.on("exception", function(e) {
+                if (errorWatch)
+                    removeWatch(errorWatch);
                 errorWatch = e.exception;
                 addWatch(errorWatch);
                 model.expand(errorWatch);
@@ -389,8 +391,7 @@ define(function(require, exports, module) {
             }
             // Set new value of a property
             else {
-                dbg.setVariable(variable, parents, 
-                  value, debug.activeFrame, function(err) {
+                dbg.setVariable(variable, value, debug.activeFrame, function(err) {
                     if (err) {
                         variable.value = oldValue;
                         updateVariable(variable, [], node, true);

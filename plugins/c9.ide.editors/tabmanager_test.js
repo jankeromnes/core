@@ -24,7 +24,6 @@ require(["lib/architect/architect", "lib/chai/chai"],
             packagePath: "plugins/c9.core/settings",
             testing: true
         },
-        "plugins/c9.core/api.js",
         {
             packagePath: "plugins/c9.ide.ui/ui",
             staticPrefix: "plugins/c9.ide.ui"
@@ -48,6 +47,7 @@ require(["lib/architect/architect", "lib/chai/chai"],
         },
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: baseProc
@@ -82,9 +82,6 @@ require(["lib/architect/architect", "lib/chai/chai"],
             this.timeout(20000);
             
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 bar.$ext.style.background = "rgba(220, 220, 220, 0.93)";
                 bar.$ext.style.position = "fixed";
                 bar.$ext.style.left = "20px";
@@ -596,6 +593,6 @@ require(["lib/architect/architect", "lib/chai/chai"],
             }
         });
         
-        onload && onload();
+        register();
     }
 });

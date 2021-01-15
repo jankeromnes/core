@@ -2,8 +2,7 @@
 
 "use client";
 
-require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai) {
-    var expect = chai.expect;
+    var expect = require("lib/chai/chai").expect;
     
     expect.setupArchitectTest([
         {
@@ -12,8 +11,6 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             startdate: new Date(),
             debug: true,
             hosted: true,
-            local: false,
-            davPrefix: "/"
         },
         
         "plugins/c9.core/ext",
@@ -26,7 +23,6 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             settings: "default",
             testing: true
         },
-        "plugins/c9.core/api.js",
         {
             packagePath: "plugins/c9.ide.ui/ui",
             staticPrefix: "plugins/c9.ide.ui"
@@ -51,33 +47,25 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         "plugins/c9.fs/fs",
         
         "plugins/c9.ide.dialog/dialog",
         "plugins/c9.ide.dialog.common/alert",
         "plugins/c9.ide.dialog.common/alert_internal",
         
-        // Mock plugins
         {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "menus", "layout", "watcher", 
-                "save", "preferences", "anims", "clipboard", "auth.bootstrap",
-                "info", "dialog.error", "threewaymerge", "error_handler"
-            ],
-            setup: expect.html.mocked
-        },
-        {
-            consumes: ["tabManager", "ace", "commands"],
+            consumes: ["tabManager", "ace", "commands", "settings"],
             provides: [],
             setup: main
         }
-    ], architect);
+    ]);
     
     function main(options, imports, register) {
+        var settings = imports.settings;
+        var commands = imports.commands;
         var tabs = imports.tabManager;
         var ace = imports.ace;
-        var commands = imports.commands;
         
         function getTabHtml(tab) {
             return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
@@ -90,9 +78,6 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         
         describe('ace', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 bar.$ext.style.background = "rgba(220, 220, 220, 0.93)";
                 bar.$ext.style.position = "fixed";
                 bar.$ext.style.left = "20px";
@@ -202,10 +187,10 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 });
             });
             describe("focus(), blur()", function() {
-                it('should get the right className and take keyboard input when focussed', function(done) {
+                it.skip('should get the right className and take keyboard input when focussed', function(done) {
                     done();
                 });
-                it('should get the right className and don\'t take any keyboard input when blurred', function(done) {
+                it.skip(`should get the right className and not take any keyboard input when blurred`, function(done) {
                     done();
                 });
             });
@@ -244,19 +229,20 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 });
                 
                 it('should change a theme', function(done) {
-                    var theme = "ace/theme/textmate";
-                    editor.ace.renderer.on("themeLoaded", function me(e) {
-                        if (e.theme.cssClass != "ace-tm") return;
-                        
-                        editor.ace.renderer.removeListener("themeLoaded", me);
-                        expect.html(getTabHtml(tabs.focussedTab).childNodes[1]).className("ace-tm");
-                    
-                        ace.once("themeChange", function() {
+                    function checkTheme(id, className, callback) {
+                        editor.ace.renderer.on("themeLoaded", function me(e) {
+                            if (e.theme.cssClass != className) return;
+                            editor.ace.renderer.removeListener("themeLoaded", me);
+                            expect.html(getTabHtml(tabs.focussedTab).childNodes[1]).className(className);
+                            callback();
+                        });
+                        ace.setTheme(id);
+                    }
+                    checkTheme("ace/theme/textmate", "ace-tm", function() {
+                        checkTheme("ace/theme/tomorrow_night_bright", "ace-tomorrow-night-bright", function() {
                             done();
                         });
-                        ace.setTheme("ace/theme/tomorrow_night_bright");
                     });
-                    ace.setTheme(theme);
                 });
                 it('should allow setting useWrapMode', function(done) {
                     var charW = editor.ace.renderer.layerConfig.characterWidth;
@@ -266,16 +252,22 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                     doc.value = Array(17).join("a very long string to be wrapped ");
                     
                     render();
-                    
-                    
                     bar.$ext.style.width = "1000px";
                     
                     expect(document.querySelector(".ace_gutter-cell").offsetHeight).to.equal(lineHeight);
                     editor.setOption("useWrapMode", true);
                     
                     render();
-                    
                     expect(Math.ceil(document.querySelector(".ace_gutter-cell").offsetHeight)).to.equal(lineHeight * 7);
+                    
+                    // check that wrap to view setting is not lost when user settings are changes
+                    settings.set("user/ace/@selectionStyle", "line");
+                    expect(editor.ace.getOption("selectionStyle")).to.equal("line");
+                    settings.set("user/ace/@selectionStyle", "text");
+                    render();
+                    expect(editor.ace.getOption("selectionStyle")).to.equal("text");
+                    expect(editor.ace.session.getOption("wrap")).to.equal("printMargin");
+                    
                     done();
                 });
                 it('should allow setting wrapToView', function(done) {
@@ -288,6 +280,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                     
                     expect(cols).to.equal(ace.session.getWrapLimit());
                     expect(document.querySelector(".ace_gutter-cell").offsetHeight).to.equal(lineHeight * ace.session.getRowLength(0));
+                    
                     done();
                 });
                 it('should allow setting wrapBehavioursEnabled', function(done) {
@@ -419,7 +412,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 it('should allow setting highlightGutterLine', function(done) {
                     editor.setOption("highlightGutterLine", false);
                     render();
-                    expect(document.querySelector(".ace_gutter-active-line").offsetHeight).to.not.ok;
+                    expect(document.querySelector(".ace_gutter-active-line")).to.not.ok;
                     
                     editor.setOption("highlightGutterLine", true);
                     render();
@@ -463,6 +456,9 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                     done();
                 });
                 it('should allow setting behavioursEnabled', function(done) {
+                    editor.setOption("syntax", "javascript");
+                    expect(editor.ace.session.$mode.$id).to.equal("ace/mode/javascript");
+                    
                     editor.setOption("behavioursEnabled", false);
                     doc.value = "test";
                     render();
@@ -494,7 +490,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                     doc.value = "function(){\n\t\n}";
                     editor.setOption("showFoldWidgets", false);
                     render();
-                    expect.html(document.querySelector(".ace_fold-widget")).not.ok;
+                    expect.html(document.querySelector(".ace_fold-widget").offsetHeight).not.ok;
                     editor.setOption("showFoldWidgets", true);
                     render();
                     expect.html(document.querySelector(".ace_fold-widget")).ok;
@@ -536,7 +532,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                     expect.html(doc.tab).text("50");
                     done();
                 });
-                it('should not loose undomanager state', function(done) {
+                it('should not lose undomanager state', function(done) {
                     var u = editor.activeDocument.undoManager;
                     u.setState({ mark: -1, position: -1, stack: []});
                     var state = u.getState();
@@ -565,6 +561,5 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
            }
         });
         
-        onload && onload();
+        register();
     }
-});

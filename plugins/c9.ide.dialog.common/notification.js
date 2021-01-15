@@ -24,16 +24,25 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            ui.insertCss(require("text!./notification.css"), 
-                options.staticPrefix, plugin);
+            ui.insertCss(require("text!./notification.css"), null, plugin);
             
-            container = layout.findParent(plugin);
-            logo = document.querySelector(".c9-mbar-round");
+            layout.on("themeChange", function() {
+                if (logo) {
+                    var toHeight = calculateHeight();
+                    if (toHeight) {
+                        logo.style.top = toHeight + "px";
+                        container.setHeight(toHeight + "px");
+                    }
+                }
+            }, plugin);
         }
         
         /***** Methods *****/
         
         function show(html, showCloseButton, timeout) {
+            container = layout.findParent(plugin);
+            logo = document.querySelector(".c9-mbar-round");
+            
             var hide, timer;
             
             count++;
@@ -60,8 +69,11 @@ define(function(require, exports, module) {
                 container.setHeight(toHeight - div.offsetHeight);
                 
                 div.style.zIndex = 10000 - count;
-                div.style.marginTop = (-1 * div.offsetHeight) + "px";
                 
+                if (!layout.hasTheme)
+                    return;
+                div.style.marginTop = (-1 * div.offsetHeight) + "px";
+                    
                 anims.animate(div, {
                     marginTop: 0,
                     duration: 0.2,

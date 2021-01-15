@@ -286,7 +286,7 @@ define(function(require, exports, module) {
             
             // Import CSS
             var css = require("text!./preview.css");
-            ui.insertCss(css, options.staticPrefix, handle);
+            ui.insertCss(css, null, handle);
             
             handleEmit.sticky("draw");
         }
@@ -593,7 +593,7 @@ define(function(require, exports, module) {
                                                 new ui.button({
                                                     id: "btnMode",
                                                     submenu: menu.aml,
-                                                    icon: "page_white.png",
+                                                    icon: true,
                                                     skin: "btn-switcher",
                                                     caption: "browser"
                                                 })

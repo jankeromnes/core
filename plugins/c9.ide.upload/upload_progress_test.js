@@ -22,7 +22,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.ui/focus",
         "plugins/c9.ide.ui/lib_apf",
         "plugins/c9.core/settings",
-        "plugins/c9.core/api",
         "plugins/c9.ide.ui/anims",
         {
             packagePath: "plugins/c9.ide.ui/ui",
@@ -44,6 +43,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.fs/fs",
             baseProc: baseProc
@@ -57,16 +57,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         "plugins/c9.ide.dialog.common/fileoverwrite",
         "plugins/c9.ide.dialog.common/fileremove",
         
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "commands", "layout", "watcher", 
-                "save", "panels", "tabManager", "preferences", "clipboard",
-                "auth.bootstrap", "info", "Panel", "proc", "dialog.error"
-            ],
-            setup: expect.html.mocked
-        },
         {
             consumes: ["upload.progress", "upload.manager", "settings"],
             provides: [],
@@ -81,9 +71,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
         describe('upload', function() {
             before(function(done) {
                 imports.settings.set("general/@animateui", true);
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
-                
                 var createJob = uploadManager._createJob;
                 uploadManager._createJob = function() {
                     var job = createJob.apply(this, arguments);
@@ -122,6 +109,6 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"],
             }
         });
         
-        onload && onload();
+        register();
     }
 });

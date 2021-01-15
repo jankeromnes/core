@@ -86,6 +86,7 @@ require([
         "plugins/c9.vfs.client/vfs_client",
         "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
+        "plugins/c9.core/api",
         {
             packagePath: "plugins/c9.ide.run/run",
             testing: true,
@@ -118,22 +119,12 @@ require([
         },
         "plugins/c9.ide.run.debug/debuggers/v8/v8debugger",
         "plugins/c9.ide.run.debug/breakpoints",
-        "plugins/c9.ide.run.debug/buttons",
         "plugins/c9.ide.run.debug/callstack",
-        "plugins/c9.ide.run.debug/immediate",
         "plugins/c9.ide.run.debug/variables",
         "plugins/c9.ide.run.debug/watches",
         //"plugins/c9.ide.run.debug/quickwatch",
-        
-        // Mock plugins
-        {
-            consumes: ["apf", "ui", "Plugin"],
-            provides: [
-                "commands", "watcher", "anims", "save", "preferences", 
-                "panels", "layout", "menus", "clipboard", "dialog.error"
-            ],
-            setup: expect.html.mocked
-        },
+        "plugins/c9.ide.run.debug/debuggers/socket",
+        "plugins/c9.ide.run.debug/debugpanel",
         {
             consumes: ["run", "debugger", "fs", "tabManager", "sourcemap", "v8debugger"],
             provides: [],
@@ -163,8 +154,6 @@ require([
         
         describe('debug', function() {
             before(function(done) {
-                apf.config.setProperty("allow-select", false);
-                apf.config.setProperty("allow-blur", false);
 
                 document.body.style.marginBottom = "200px";
                 done();
@@ -433,6 +422,6 @@ require([
 //            });
         });
 
-        onload && onload();
+        register();
     }
 });

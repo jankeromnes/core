@@ -75,9 +75,9 @@ define(function(require, module, exports) {
             settings.on("read", function(e) {
                 // Defaults
                 settings.setDefaults("state/console", [
-                    ["expanded", "true"],
-                    ["maximized", "false"],
-                    ["height", "153"]
+                    ["expanded", true],
+                    ["maximized", false],
+                    ["height", 153]
                 ]);
                 
                 // Height
@@ -126,7 +126,7 @@ define(function(require, module, exports) {
             if (drawn) return;
             drawn = true;
             
-            ui.insertCss(cssString, options.staticPrefix, plugin);
+            ui.insertCss(cssString, null, plugin);
 
             consoleRow = layout.findParent(plugin);
             container = consoleRow.appendChild(new ui.bar({
@@ -147,7 +147,7 @@ define(function(require, module, exports) {
             // Track splitter and update state
             var splitter = consoleRow.$handle;
             splitter && splitter.on("dragdrop", function(e) {
-                height = Math.max(minHeight, container.height);
+                height = Math.max(minHeight, container.$ext.offsetHeight);
                 if (height)
                     settings.set("state/console/@height", height);
                 emit("resize");
